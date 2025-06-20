@@ -1,8 +1,9 @@
+require("dotenv").config();
 const mineflayer = require("mineflayer");
 const http = require("http");
-const { chromium } = require("playwright");
+const puppeteer = require("puppeteer");
 
-// Serwer HTTP, aby UptimeRobot mógł pingować
+// Prosty serwer HTTP (np. do uptime monitoring)
 http
   .createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
@@ -12,46 +13,49 @@ http
 
 console.log("Serwer HTTP działa, port:", process.env.PORT || 3000);
 
-// === FUNKCJA STARTUJĄCA SERWER ATERNOS ===
+// Funkcja do uruchomienia serwera Aternos przez Puppeteer
 async function startAternosServer() {
-  const browser = await chromium.launch({ headless: true });
+  console.log("🔄 Próba uruchomienia serwera Aternos...");
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const page = await browser.newPage();
 
   try {
-    await page.goto("https://aternos.org/go/", { waitUntil: "load" });
-
-    // Logowanie do konta
-    await page.goto("https://aternos.org/accounts/", { waitUntil: "load" });
-    await page.fill("#user", process.env.USERNAME);
-    await page.fill("#password", process.env.PASSWORD);
+    // Przejście do strony logowania
+    await page.goto("https://aternos.org/accounts/", { waitUntil: "networkidle2" });
+    // Logowanie
+    await page.type("#user", process.env.USERNAME);
+    await page.type("#password", process.env.PASSWORD);
     await page.click("#login-form > button");
-    await page.waitForLoadState("load");
+    await page.waitForNavigation({ waitUntil: "networkidle2" });
 
     // Przejście do panelu serwera
-    await page.goto("https://aternos.org/server/", { waitUntil: "load" });
+    await page.goto("https://aternos.org/server/", { waitUntil: "networkidle2" });
 
-    // Kliknięcie przycisku "Start"
+    // Kliknięcie przycisku "Start" jeśli jest dostępny
     const startButton = await page.$("button.start");
     if (startButton) {
-      console.log("🟢 Klikam przycisk START!");
+      console.log("🟢 Klikam START serwera!");
       await startButton.click();
     } else {
-      console.log("✅ Serwer już działa lub nie znaleziono przycisku start.");
+      console.log("✅ Serwer jest już uruchomiony lub brak przycisku start.");
     }
 
     await browser.close();
   } catch (error) {
-    console.error("❌ Błąd przy starcie serwera:", error.message);
+    console.error("❌ Błąd podczas uruchamiania serwera Aternos:", error.message);
     await browser.close();
   }
 }
 
-// === FUNKCJA TWORZĄCA BOTA MINEFLAYER ===
+// Funkcja tworząca bota Mineflayer
 function createBot() {
   const bot = mineflayer.createBot({
-    host: "plcraftopia.aternos.me",
-    port: 34736,
-    username: "24_7_Bot",
+    host: "plcraftopia.aternos.me",  // Twój host
+    port: 34736,                     // Twój port
+    username: "24_7_Bot",            // Nazwa bota
     version: "1.21.4",
     auth: "offline",
   });
@@ -63,6 +67,7 @@ function createBot() {
   bot.on("spawn", () => {
     console.log("🟢 Bot pojawił się na serwerze!");
 
+    // Proste losowe ruchy bota
     function randomMove() {
       const directions = ["forward", "back", "left", "right"];
       const direction = directions[Math.floor(Math.random() * directions.length)];
@@ -74,20 +79,18 @@ function createBot() {
       setTimeout(() => {
         bot.setControlState(direction, false);
         bot.setControlState("jump", false);
-
         setTimeout(randomMove, 1000);
       }, duration);
     }
-
     randomMove();
   });
 
   bot.on("error", (err) => {
-    console.log("❌ Błąd:", err.message);
+    console.log("❌ Błąd bota:", err.message);
   });
 
   bot.on("end", async () => {
-    console.log("🔴 Bot rozłączony! Spróbuję uruchomić serwer Aternos...");
+    console.log("🔴 Bot rozłączony! Próba uruchomienia serwera Aternos...");
     await startAternosServer();
     console.log("🕒 Czekam 30 sekund i tworzę nowego bota...");
     setTimeout(createBot, 30000);
