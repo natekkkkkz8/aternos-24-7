@@ -37,15 +37,3 @@ Connects to Minecraft server in cracked mode
 Moves randomly to avoid AFK kick
 
 Reconnects automatically after disconnect
-
-Runs a small HTTP server to stay alive
-
-Dependencies
-
-mineflayer
-
-dotenv
-
-Support
-
-Report issues or suggest features on GitHub.
