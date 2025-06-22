@@ -3,7 +3,7 @@
 Simple cracked Minecraft bot that moves randomly on the server.
 Configured via environment variables in the .env file.
 
-Features
+**Features**
 
 Connects to any Minecraft server (cracked mode)
 
@@ -13,7 +13,7 @@ Auto reconnect on disconnect
 
 Configurable server IP, port, username, and Minecraft version
 
-Setup
+**Setup**
 
 Clone or download the files
 
@@ -30,7 +30,7 @@ npm install
 Start the bot:
 npm start
 
-Usage
+**Usage**
 
 Connects to Minecraft server in cracked mode
 
